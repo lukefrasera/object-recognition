@@ -5,8 +5,9 @@
 #include "log.h"
 
 #define FREE_CHECK_NULL(x) do {                                                \
-  if (!x) {                                                                    \
+  if ((x) != NULL {                                                            \
     free(x);                                                                   \
+    x = NULL;                                                                  \
   }                                                                            \
 } while(0)                                                                     \
 
@@ -38,7 +39,7 @@ int main(int argc, char *argv[]) {
         filename_b = strdup(optarg);
         break;
       case 'c':
-        output = strdup(optarg);
+        output     = strdup(optarg);
         break;
       default:
         printf(
@@ -60,11 +61,12 @@ int main(int argc, char *argv[]) {
     printf("ERROR: Output is NULL\n");
     error_flag = true;
   }
-  if (error_flag)
+  if (error_flag) {
     FREE_CHECK_NULL(filename_a);
     FREE_CHECK_NULL(filename_b);
     FREE_CHECK_NULL(output);
     return -1;
+  }
 
   printf("Input A: %s, Input B: %s, Output: %s\n",
     filename_a, filename_b, output);
