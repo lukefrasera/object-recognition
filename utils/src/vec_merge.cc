@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
   // Read Headers from the two input vec files
   FILE *file_a      = fopen(filename_a, "rb");
   FILE *file_b      = fopen(filename_b, "rb");
-  FILE *output_file = fopen(output, "rb");
+  FILE *output_file = fopen(output, "wb");
   int count_a, count_b, size_a, size_b;
   ReadVecHeader(file_a, &count_a, &size_a);
 //  TODO: READ Header B
