@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  printf("Input A: %s, Input B: %s, Output: %s\n",
+  LOG_INFO("Input A: %s, Input B: %s, Output: %s",
     filename_a, filename_b, output);
 
   // Read Headers from the two input vec files
