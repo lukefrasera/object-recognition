@@ -5,28 +5,72 @@
 #include "log.h"
 
 #define FREE_CHECK_NULL(x) do {                                                \
-  if ((x) != NULL {                                                            \
+  if (!x) {                                                                    \
     free(x);                                                                   \
-    x = NULL;                                                                  \
   }                                                                            \
 } while(0)                                                                     \
 
-void ReadVecHeader(FILE *file, int *count, int *size) {
 
+//Count is first 4 bytes
+//Size is size of image 
+
+//short tmp = n;
+//fread( &tmp, sizeof( tmp ), n, file);
+
+void ReadVecHeader(FILE *file, int *count, int *size) {
+  // Read first four bytes of vec file
+  fread(count, sizeof(*count), 1, file);
+
+  // Read next four bytes into size
+  fread(size, sizeof(*size), 1, file);
+
+  // Read in two shorts
+  short tmp;
+  fread(&tmp, sizeof(tmp), 2, file);
 }
 
-void ReadVecSample(FILE *file, int size, unsigned char *data) {
+void WriteVecHeader(FILE *file, int *count, int *size) {
+  // Read first four bytes of vec file
+  fwrite(count, sizeof(*count), 1, file);
 
+  // Read next four bytes into size
+  fwrite(size, sizeof(*size), 1, file);
+
+  // Read in two shorts
+  short tmp;
+  fread(&tmp, sizeof(tmp), 2, file);
+}
+
+// ReadVecSample: 
+// Description: Read a single sample from a file and store
+//              information into data. Data is a pre allocated
+//              pointer.
+// Number of bytes in image = size * size of short
+void ReadVecSample(FILE *file, int size, unsigned char *data) {
+  fread(data, sizeof(short)*size, 1, file);
+}
+
+void WriteVecSample(FILE *file, int size, unsigned char *data) {
+  fwrite(data, sizeof(short)*size, 1, file);
 }
 
 void TransferSamples(FILE *file_input, FILE *file_output, int count, int size) {
+  unsigned char *data = malloc(sizeof(short)*size);
 
+  // Takes all samples from one file and puts into output file
+  for (int x=0; x < count; x++) {
+    ReadVecSample(file_input, size, data);
+    WriteVecSample(file_output, size, data);
+  }
 }
 
-void WriteCompbinedHeader(FILE *file_output,
+void WriteCombinedHeader(FILE *file_output,
     int count_1, int count_2, int size) {
-
+  
+  int count_output = count_1 + count_2;
+  WriteVecHeader(file_output, count_output, size);
 }
+
 int main(int argc, char *argv[]) {
   int error_flag = false, opt;
   char *filename_a = NULL, *filename_b = NULL, *output = NULL;
@@ -39,7 +83,7 @@ int main(int argc, char *argv[]) {
         filename_b = strdup(optarg);
         break;
       case 'c':
-        output     = strdup(optarg);
+        output = strdup(optarg);
         break;
       default:
         printf(
@@ -67,18 +111,21 @@ int main(int argc, char *argv[]) {
     FREE_CHECK_NULL(output);
     return -1;
   }
-
-  LOG_INFO("Input A: %s, Input B: %s, Output: %s",
+  printf("Input A: %s, Input B: %s, Output: %s\n",
     filename_a, filename_b, output);
 
   // Read Headers from the two input vec files
   FILE *file_a      = fopen(filename_a, "rb");
   FILE *file_b      = fopen(filename_b, "rb");
-  FILE *output_file = fopen(output, "wb");
+  FILE *output_file = fopen(output, "rb");
   int count_a, count_b, size_a, size_b;
+  //Read Header from file_a
   ReadVecHeader(file_a, &count_a, &size_a);
+  //Read Header from file_b
+  ReadVecHeader(file_b, &count_b, &size_b);
 //  TODO: READ Header B
   LOG_INFO("Header B Doesn't exist yet, %s", filename_b);
+
   // Check if image size is the same
   if (size_a != size_b) {
     printf("ERROR: Input vec files have different image size\n");
@@ -88,7 +135,7 @@ int main(int argc, char *argv[]) {
     return -1;
   }
   // Generate Output combined vec file header
-  WriteCompbinedHeader(output_file, count_a, count_a, size_a);
+  WriteCombinedHeader(output_file, count_a, count_b, size_a);
   // Copy vec samples from first vec file
   TransferSamples(file_a, output_file, count_a, size_a);
   // copy vec samples from second vec file
