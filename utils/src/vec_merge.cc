@@ -29,16 +29,16 @@ void ReadVecHeader(FILE *file, int *count, int *size) {
   fread(&tmp, sizeof(tmp), 2, file);
 }
 
-void WriteVecHeader(FILE *file, int *count, int *size) {
+void WriteVecHeader(FILE *file, int count, int size) {
   // Read first four bytes of vec file
-  fwrite(count, sizeof(*count), 1, file);
+  fwrite(&count, sizeof(count), 1, file);
 
   // Read next four bytes into size
-  fwrite(size, sizeof(*size), 1, file);
+  fwrite(&size, sizeof(size), 1, file);
 
   // Read in two shorts
-  short tmp;
-  fread(&tmp, sizeof(tmp), 2, file);
+  int tmp = 0;
+  fwrite(&tmp, sizeof(tmp), 1, file);
 }
 
 // ReadVecSample: 
@@ -47,21 +47,24 @@ void WriteVecHeader(FILE *file, int *count, int *size) {
 //              pointer.
 // Number of bytes in image = size * size of short
 void ReadVecSample(FILE *file, int size, unsigned char *data) {
-  fread(data, sizeof(short)*size, 1, file);
+  fread(data, sizeof(short)*size+1, 1, file);
 }
 
 void WriteVecSample(FILE *file, int size, unsigned char *data) {
-  fwrite(data, sizeof(short)*size, 1, file);
+  fwrite(data, sizeof(short)*size+1, 1, file);
+
 }
 
 void TransferSamples(FILE *file_input, FILE *file_output, int count, int size) {
-  unsigned char *data = malloc(sizeof(short)*size);
+  unsigned char *data;
+  data = (unsigned char*)malloc(sizeof(short) * size+1);
 
   // Takes all samples from one file and puts into output file
   for (int x=0; x < count; x++) {
     ReadVecSample(file_input, size, data);
     WriteVecSample(file_output, size, data);
   }
+  free(data);
 }
 
 void WriteCombinedHeader(FILE *file_output,
@@ -111,20 +114,21 @@ int main(int argc, char *argv[]) {
     FREE_CHECK_NULL(output);
     return -1;
   }
-  printf("Input A: %s, Input B: %s, Output: %s\n",
+  LOG_INFO("Input A: %s, Input B: %s, Output: %s",
     filename_a, filename_b, output);
 
   // Read Headers from the two input vec files
   FILE *file_a      = fopen(filename_a, "rb");
   FILE *file_b      = fopen(filename_b, "rb");
-  FILE *output_file = fopen(output, "rb");
+  FILE *output_file = fopen(output, "wb");
   int count_a, count_b, size_a, size_b;
   //Read Header from file_a
   ReadVecHeader(file_a, &count_a, &size_a);
   //Read Header from file_b
   ReadVecHeader(file_b, &count_b, &size_b);
-//  TODO: READ Header B
-  LOG_INFO("Header B Doesn't exist yet, %s", filename_b);
+
+  LOG_INFO("Count A: %d, Count B: %d, Size A: %d, Size B: %d", count_a, 
+    count_b, size_a, size_b);
 
   // Check if image size is the same
   if (size_a != size_b) {
