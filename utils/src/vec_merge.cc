@@ -19,14 +19,16 @@
 
 void ReadVecHeader(FILE *file, int *count, int *size) {
   // Read first four bytes of vec file
-  fread(count, sizeof(*count), 1, file);
+  fread(count, sizeof(int), 1, file);
+  LOG_INFO("count: %d", *count);
 
   // Read next four bytes into size
-  fread(size, sizeof(*size), 1, file);
+  fread(size, sizeof(int), 1, file);
+  LOG_INFO("size: %d", *size);
 
   // Read in two shorts
   short tmp;
-  fread(&tmp, sizeof(tmp), 2, file);
+  fread(&tmp, sizeof(short), 2, file);
 }
 
 void WriteVecHeader(FILE *file, int count, int size) {
@@ -119,8 +121,11 @@ int main(int argc, char *argv[]) {
 
   // Read Headers from the two input vec files
   FILE *file_a      = fopen(filename_a, "rb");
+  LOG_INFO("File A path: %s, %d", filename_a, file_a);
   FILE *file_b      = fopen(filename_b, "rb");
+  LOG_INFO("File B path: %s, %d", filename_b, file_b);
   FILE *output_file = fopen(output, "wb");
+  LOG_INFO("File C path: %s, %d", output, output_file);
   int count_a, count_b, size_a, size_b;
   //Read Header from file_a
   ReadVecHeader(file_a, &count_a, &size_a);

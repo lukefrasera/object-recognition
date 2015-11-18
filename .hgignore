@@ -3,3 +3,4 @@ syntax: glob
 *.out
 *~
 build/
+*.vec

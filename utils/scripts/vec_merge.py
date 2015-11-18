@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 '''
 Execute vec_merge.cc for each vec file in a given folder 
 and output a single vec file
@@ -6,9 +7,35 @@ and output a single vec file
 import os
 import shutil
 import argparse
+import weakref
 
 def Merge(file_1, file_2, vec_file):
-    os.system('../../build/utils/vec_merge -a {0} -b {1} -c{2}'.format(file_1, file_2, vec_file))
+    os.system('../../build/utils/vec-merge -a {0} -b {1} -c{2}'.format(file_1, file_2, vec_file))
+
+class DoubleFileBuffer(object):
+    def __init__(self, filename):
+        self.filename = filename
+        self.input = "a.buf"
+        self.output = "b.buf"
+        file = open(self.input, 'w')
+        file.close()
+        file = open(self.output, 'w')
+        file.close()
+    def __del__(self):
+        shutil.copy(self.input, self.filename)
+        os.remove(self.input)
+        os.remove(self.output)
+        print "deleting Files and closeing shop"
+
+    def SwapBuffers(self):
+        temp = self.input
+        self.input = self.output
+        self.output = temp
+
+    def GetInput(self):
+        return self.input
+    def GetOutput(self):
+        return self.output
 
 
 
@@ -16,30 +43,16 @@ def MergeVecFiles(directory, vec_file_name):
     dir_list = os.listdir(directory)
     init_file =  '{0}/{1}'.format(directory, dir_list[0])
 
-    MB1 = '{0}/MB1.vec'.format(directory)
-    shutil.copy(init_file, MB1)
+    fbuffer = DoubleFileBuffer(vec_file_name)
+    shutil.copy(init_file, fbuffer.GetInput())
     dir_list.pop(0)
 
-    
-    MB2 = open(directory + "MB2.vec", "w")
-    MB2.close()
-    MB2 = os.path.join(directory, "MB2.vec")
 
     print directory
-    for i,file in enumerate(dir_list):
-        if i % 2:
-            print os.path.join(directory, file)
-            print MB2
-            print MB1
-            Merge(MB1, os.path.join(directory, file), MB2)
-        else:
-            Merge(MB2, os.path.join(directory,file), MB1)
-
-    # if len(dir_list) % 2:
-    #     Merge(MB2, MB1, vec_file_name)
-
-    # else:
-    #     Merge (MB1, MB2, vec_file_name)
+    for file in dir_list:
+        Merge(fbuffer.GetInput(), os.path.join(directory, file), fbuffer.GetOutput())
+        fbuffer.SwapBuffers()
+    del fbuffer
 
 
 def main():
