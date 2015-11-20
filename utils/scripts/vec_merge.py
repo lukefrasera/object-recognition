@@ -10,7 +10,7 @@ import argparse
 import weakref
 
 def Merge(file_1, file_2, vec_file):
-    os.system('../../build/utils/vec-merge -a {0} -b {1} -c{2}'.format(file_1, file_2, vec_file))
+    os.system('./vec-merge -a {0} -b {1} -c{2}'.format(file_1, file_2, vec_file))
 
 class DoubleFileBuffer(object):
     def __init__(self, filename):
