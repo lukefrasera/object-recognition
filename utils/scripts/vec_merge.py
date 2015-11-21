@@ -8,9 +8,12 @@ import os
 import shutil
 import argparse
 import weakref
+from os import listdir
+from os.path import isfile, join
 
 def Merge(file_1, file_2, vec_file):
     os.system('./vec-merge -a {0} -b {1} -c{2}'.format(file_1, file_2, vec_file))
+    print './vec-merge -a {0} -b {1} -c {2}'.format(file_1, file_2, vec_file)
 
 class DoubleFileBuffer(object):
     def __init__(self, filename):
@@ -40,20 +43,27 @@ class DoubleFileBuffer(object):
 
 
 def MergeVecFiles(directory, vec_file_name):
-    dir_list = os.listdir(directory)
-    init_file =  '{0}/{1}'.format(directory, dir_list[0])
+    directory = os.path.abspath(directory)
+    vec_file_name = os.path.abspath(vec_file_name)
+    print directory
 
+    dir, filename = os.path.split(__file__)
+    cwd = os.getcwd()
+
+    os.chdir(dir)
+
+    dir_list = [ f for f in listdir(directory) if isfile(join(directory,f)) ]
+    init_file =  '{0}/{1}'.format(directory, dir_list[0])
     fbuffer = DoubleFileBuffer(vec_file_name)
     shutil.copy(init_file, fbuffer.GetInput())
     dir_list.pop(0)
-
-
-    print directory
     for file in dir_list:
         Merge(fbuffer.GetInput(), os.path.join(directory, file), fbuffer.GetOutput())
         fbuffer.SwapBuffers()
-    del fbuffer
 
+
+    del fbuffer
+    os.chdir(cwd)
 
 def main():
 
