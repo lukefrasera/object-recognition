@@ -27,8 +27,8 @@ void ReadVecHeader(FILE *file, int *count, int *size) {
   LOG_INFO("size: %d", *size);
 
   // Read in two shorts
-  short tmp;
-  fread(&tmp, sizeof(short), 2, file);
+  int tmp;
+  fread(&tmp, sizeof(int), 1, file);
 }
 
 void WriteVecHeader(FILE *file, int count, int size) {
