@@ -14,14 +14,19 @@
 
 int main(int argc, char *argv[]) {
 
-
-  // Detect QR Corners Identifiers
-  qr::Contour_t corners;
-  qr::QRDetectIdentifiers(in_img, &corners);
-
-  // cv::imshow("QR Test", in_img);
-  cv::waitKey(0);
-  FREE_CHECK_NULL(input_img);
-  FREE_CHECK_NULL(output_img);
+  cv::VideoCapture cap(0);
+  if (!cap.isOpened())
+    return -1;
+  cv::Mat frame;
+  cv::namedWindow("Detection", 1);
+  while(true) {
+    cap >> frame;
+    // Detect QR Corners Identifiers
+    qr::Contour_t corners;
+    qr::QRDetectIdentifiers(frame, &corners);
+    corners.clear();
+    // cv::imshow("QR Test", in_img);
+    if (cv::waitKey(30) >= 0) break;
+  }
   return 0;
 }

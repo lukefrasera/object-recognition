@@ -32,6 +32,15 @@ if( ${BUILD_TESTS} )
     quad_tree
     ${OpenCV_LIBS}
   )
+
+  add_executable(qr_video_test
+    src/qr_video_test.cc
+    src/qr_detect.cc
+  )
+  target_link_libraries(qr_video_test
+    quad_tree
+    ${OpenCV_LIBS}
+  )
 endif( ${BUILD_TESTS} )
 
 option(BUILD_UTILS "Build utility programs" True)
