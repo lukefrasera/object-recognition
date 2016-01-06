@@ -63,7 +63,7 @@ void QRCullContourCriteriaLengthRatio(const Contour_t *contours,
 void QRCullContourCriteriaLength(const Contour_t *contours,
     const std::vector<cv::Vec4i> hierarchy,
     int32_t *mask) {
-  int t = 10;
+  int t = 20;
   for (int i = 0; i < contours->size(); ++i) {
     if ((*contours)[i].size() < t) {
       mask[i] = 0;
@@ -86,14 +86,13 @@ void QRCullContourCriteriaOverlap(const Contour_t *contours,
       qt.Insert(utils::Point(moments[i]));
     }
   }
-
   // Find Nearest Neghbors to discover identification markers
   std::vector<utils::Point> range;
   for (int i = 0; i < contours->size(); ++i) {
     if (mask[i] == 1) {
       range = qt.QueryRange(utils::AABB(utils::Point(moments[i]), dist));
-      printf("Range Size: %d\n", range.size());
-      if (range.size() < dist)
+      // printf("Range Size: %d\n", (int)range.size());
+      if (range.size() < 5)
         mask[i] = 0;
     }
   }

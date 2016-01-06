@@ -1,10 +1,11 @@
 #include "quad_tree.h"
 #include <cstddef>
+#include <stdio.h>
 
 namespace utils {
 Point::Point(float x, float y) {
   x_ = x;
-  y = y_;
+  y_ = y;
 }
 
 Point::Point(const Point *p) {
@@ -34,7 +35,7 @@ uint32_t AABB::ContainsPoint(Point p) {
   if (p.x_ < (center_.x_ - half_dimension_) || p.x_ >= (center_.x_ + half_dimension_))
     return -1;
   if (p.y_ < (center_.y_ - half_dimension_) || p.y_ >= (center_.y_ + half_dimension_))
-    return -1;half_dimension_;
+    return -1;
   return 1;
 }
 
@@ -56,7 +57,6 @@ uint32_t AABB::IntersectsAABB(AABB bbox) {
 QuadTree::QuadTree(AABB bbox, uint32_t capacity) {
   bbox_ = bbox;
   capacity_  = capacity;
-  printf("X: %d, Y: %d\n", bbox.center_.x_, bbox.center_.y_);
   NW = NULL;
   NE = NULL;
   SW = NULL;
@@ -72,7 +72,7 @@ QuadTree::~QuadTree() {
 }
 
 uint32_t QuadTree::Insert(Point point) {
-  if (!bbox_.ContainsPoint(point))
+  if (bbox_.ContainsPoint(point) == -1)
     return -1;
   if (points_.size() < capacity_ && divided_ == false) {
     points_.push_back(point);
@@ -93,16 +93,16 @@ uint32_t QuadTree::Insert(Point point) {
 uint32_t QuadTree::Subdivide() {
   // Generate BBOZ for new qudrants
   AABB nw_bbox(
-    Point(bbox_.center_.x_ - bbox_.half_dimension_, bbox_.center_.y_ + bbox_.half_dimension_),
+    Point(bbox_.center_.x_ - bbox_.half_dimension_/2.0, bbox_.center_.y_ + bbox_.half_dimension_/2.0),
     bbox_.half_dimension_/2.0);
   AABB ne_bbox(
-    Point(bbox_.center_.x_ + bbox_.half_dimension_, bbox_.center_.y_ + bbox_.half_dimension_),
+    Point(bbox_.center_.x_ + bbox_.half_dimension_/2.0, bbox_.center_.y_ + bbox_.half_dimension_/2.0),
     bbox_.half_dimension_/2.0);
   AABB sw_bbox(
-    Point(bbox_.center_.x_ - bbox_.half_dimension_, bbox_.center_.y_ - bbox_.half_dimension_),
+    Point(bbox_.center_.x_ - bbox_.half_dimension_/2.0, bbox_.center_.y_ - bbox_.half_dimension_/2.0),
     bbox_.half_dimension_/2.0);
   AABB se_bbox(
-    Point(bbox_.center_.x_ + bbox_.half_dimension_, bbox_.center_.y_ - bbox_.half_dimension_),
+    Point(bbox_.center_.x_ + bbox_.half_dimension_/2.0, bbox_.center_.y_ - bbox_.half_dimension_/2.0),
     bbox_.half_dimension_/2.0);
 
   NW = new QuadTree(nw_bbox, capacity_);
