@@ -27,6 +27,7 @@ class QuadTree {
   ~QuadTree();
   uint32_t Insert(Point point);
   std::vector<Point> QueryRange(AABB bbox);
+  void GetBounds(std::vector<AABB> *bounds);
  private:
   uint32_t Subdivide();
 

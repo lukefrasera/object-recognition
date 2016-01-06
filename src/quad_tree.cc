@@ -55,8 +55,8 @@ uint32_t AABB::IntersectsAABB(AABB bbox) {
 
 QuadTree::QuadTree(AABB bbox, uint32_t capacity) {
   bbox_ = bbox;
-  capacity_  = capacity_;
-
+  capacity_  = capacity;
+  printf("X: %d, Y: %d\n", bbox.center_.x_, bbox.center_.y_);
   NW = NULL;
   NE = NULL;
   SW = NULL;
@@ -74,7 +74,6 @@ QuadTree::~QuadTree() {
 uint32_t QuadTree::Insert(Point point) {
   if (!bbox_.ContainsPoint(point))
     return -1;
-
   if (points_.size() < capacity_ && divided_ == false) {
     points_.push_back(point);
     return 1;
@@ -82,10 +81,10 @@ uint32_t QuadTree::Insert(Point point) {
     if (NW == NULL)
       Subdivide();
 
-    if (NW->Insert(point)) return 1;
-    if (NE->Insert(point)) return 1;
-    if (SW->Insert(point)) return 1;
-    if (SE->Insert(point)) return 1;
+    if (NW->Insert(point) == 1) return 1;
+    if (NE->Insert(point) == 1) return 1;
+    if (SW->Insert(point) == 1) return 1;
+    if (SE->Insert(point) == 1) return 1;
 
     return -1;
   }
@@ -112,10 +111,10 @@ uint32_t QuadTree::Subdivide() {
   SE = new QuadTree(se_bbox, capacity_);
 
   for (int i = 0; i < points_.size(); ++i) {
-    if (NW->Insert(points_[i])) {
-    } else if (NE->Insert(points_[i])) {
-    } else if (SW->Insert(points_[i])) {
-    } else if (SE->Insert(points_[i])) {
+    if (NW->Insert(points_[i]) == 1) {
+    } else if (NE->Insert(points_[i]) == 1) {
+    } else if (SW->Insert(points_[i]) == 1) {
+    } else if (SE->Insert(points_[i]) == 1) {
     }
   }
   divided_ = true;
@@ -151,5 +150,16 @@ std::vector<Point> QuadTree::QueryRange(AABB bbox) {
   temp_range.clear();
 
   return range_points;
+}
+
+void QuadTree::GetBounds(std::vector<AABB> *bounds) {
+  bounds->push_back(bbox_);
+
+  if (NW != NULL) {
+    NW->GetBounds(bounds);
+    NE->GetBounds(bounds);
+    SW->GetBounds(bounds);
+    SE->GetBounds(bounds);
+  }
 }
 }  // namespace utils

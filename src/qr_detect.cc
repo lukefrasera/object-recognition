@@ -82,16 +82,20 @@ void QRCullContourCriteriaOverlap(const Contour_t *contours,
   QRGetContoursMassCenters(contours, &moments);
 
   for (int i = 0; i < contours->size(); ++i) {
-    qt.Insert(utils::Point(moments[i]));
+    if (mask[i] == 1) {
+      qt.Insert(utils::Point(moments[i]));
+    }
   }
 
   // Find Nearest Neghbors to discover identification markers
   std::vector<utils::Point> range;
   for (int i = 0; i < contours->size(); ++i) {
-    range = qt.QueryRange(utils::AABB(utils::Point(moments[i]), dist));
-    printf("Range Size: %d\n", range.size());
-    if (range.size() < dist)
-      mask[i] = 0;
+    if (mask[i] == 1) {
+      range = qt.QueryRange(utils::AABB(utils::Point(moments[i]), dist));
+      printf("Range Size: %d\n", range.size());
+      if (range.size() < dist)
+        mask[i] = 0;
+    }
   }
 }
 
@@ -122,7 +126,18 @@ void QRDetectIdentifiers(cv::Mat image, Contour_t *ids) {
   std::vector<cv::Vec4i> hierarchy;
 
   QRGetContoursFromImage(image, ids, &hierarchy);
+
+  std::vector<cv::Point2f> moments;
+
   QRCullContours(ids, hierarchy);
+  // Compute moments
+  QRGetContoursMassCenters(ids, &moments);
+
+  for (int i = 0; i < moments.size(); ++i) {
+    cv::circle( image, moments[i], 4, cv::Scalar(50,255,255), -1, 8, 0 );
+  }
+
+  cv::rectangle(image, cv::Point(0, 0), cv::Point(10, 20), cv::Scalar(255, 255, 0), 2);
 
   cv::drawContours(image, *ids, -1, cv::Scalar(100,50, 255), 2);
   cv::imshow("QR_test", image);

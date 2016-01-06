@@ -24,6 +24,14 @@ if( ${BUILD_TESTS} )
     ${OpenCV_LIBS}
     quad_tree
   )
+
+  add_executable(qt_test
+    src/qt_test.cc
+  )
+  target_link_libraries(qt_test
+    quad_tree
+    ${OpenCV_LIBS}
+  )
 endif( ${BUILD_TESTS} )
 
 option(BUILD_UTILS "Build utility programs" True)
