@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
     qr::Contour_t corners;
     qr::QRDetectIdentifiers(frame, &corners);
     corners.clear();
-    // cv::imshow("QR Test", in_img);
+    cv::imshow("Detection", frame);
     if (cv::waitKey(30) >= 0) break;
   }
   return 0;

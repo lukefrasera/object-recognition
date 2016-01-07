@@ -16,6 +16,8 @@ void QRGetContoursFromImage(cv::Mat image, Contour_t *contours,
 
   cv::cvtColor(image, gray, CV_RGB2GRAY);
   cv::Canny(gray, edge, 100, 200, 3);
+
+  cv::imshow("edges", edge);
   cv::findContours(edge, *contours, *hierarchy, cv::RETR_TREE,
     cv::CHAIN_APPROX_SIMPLE);
 }
@@ -63,7 +65,7 @@ void QRCullContourCriteriaLengthRatio(const Contour_t *contours,
 void QRCullContourCriteriaLength(const Contour_t *contours,
     const std::vector<cv::Vec4i> hierarchy,
     int32_t *mask) {
-  int t = 20;
+  int t = 25;
   for (int i = 0; i < contours->size(); ++i) {
     if ((*contours)[i].size() < t) {
       mask[i] = 0;
@@ -71,10 +73,30 @@ void QRCullContourCriteriaLength(const Contour_t *contours,
   }
 }
 
+uint32_t CountContourChildren(const std::vector<cv::Vec4i> *hierarchy, int idx) {
+  if ((*hierarchy)[idx][2] == -1) {
+    return 0;
+  } else {
+    return CountContourChildren(hierarchy, (*hierarchy)[idx][2]) + 1;
+  }
+}
+
+void QRCullContourCriteriaInterior(const Contour_t *contours,
+    const std::vector<cv::Vec4i> hierarchy,
+    int32_t *mask) {
+  for (int i = 0; i < contours->size(); ++i) {
+    if (mask[i] == 1) {
+      if (CountContourChildren(&hierarchy, i) < 3) {
+        mask[i] = 0;
+      }
+    }
+  }
+}
+
 void QRCullContourCriteriaOverlap(const Contour_t *contours,
     const std::vector<cv::Vec4i> hierarchy,
     int32_t *mask) {
-  float dist = 1;
+  float dist = 2;
   utils::QuadTree qt(utils::AABB(utils::Point(1280.0/2.0, 720.0/2), 1280.0/2.0), 4);
   std::vector<cv::Point2f> moments;
 
@@ -91,8 +113,7 @@ void QRCullContourCriteriaOverlap(const Contour_t *contours,
   for (int i = 0; i < contours->size(); ++i) {
     if (mask[i] == 1) {
       range = qt.QueryRange(utils::AABB(utils::Point(moments[i]), dist));
-      // printf("Range Size: %d\n", (int)range.size());
-      if (range.size() < 5)
+      if (range.size() < 3)
         mask[i] = 0;
     }
   }
@@ -114,9 +135,10 @@ void QRApplyContourMask(Contour_t *contours, const int32_t *mask) {
 void QRCullContours(Contour_t *contours, std::vector<cv::Vec4i> hierarchy) {
   int32_t *mask = new int32_t[contours->size()];
   for (int i = 0; i < contours->size(); ++i) {mask[i] = 1;}
-  QRCullContourCriteriaLengthRatio(contours, hierarchy, mask);
+  // QRCullContourCriteriaLengthRatio(contours, hierarchy, mask);
   QRCullContourCriteriaLength(contours, hierarchy, mask);
   QRCullContourCriteriaOverlap(contours, hierarchy, mask);
+  QRCullContourCriteriaInterior(contours, hierarchy, mask);
   QRApplyContourMask(contours, mask);
   delete [] mask;
 }
@@ -136,9 +158,6 @@ void QRDetectIdentifiers(cv::Mat image, Contour_t *ids) {
     cv::circle( image, moments[i], 4, cv::Scalar(50,255,255), -1, 8, 0 );
   }
 
-  cv::rectangle(image, cv::Point(0, 0), cv::Point(10, 20), cv::Scalar(255, 255, 0), 2);
-
   cv::drawContours(image, *ids, -1, cv::Scalar(100,50, 255), 2);
-  cv::imshow("QR_test", image);
 }
 }
