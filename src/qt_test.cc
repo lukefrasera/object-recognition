@@ -8,7 +8,8 @@ int main(int argc, char *argv[]) {
   printf("Testing Quad Tree...\n");
   cv::Mat image(100,100, CV_8UC3, cv::Scalar(0,0,0));
   utils::AABB bbox(utils::Point(50.0, 50.0), 50.0);
-  LOG_INFO("BBox: %f, %f, %f", bbox.center_.x_, bbox.center_.y_, bbox.half_dimension_);
+  LOG_INFO("BBox: %f, %f, %f",
+    bbox.center_.x_, bbox.center_.y_, bbox.half_dimension_);
 
   utils::QuadTree qt(bbox, 4);
   std::vector<utils::AABB> bounding_boxes;

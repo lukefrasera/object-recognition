@@ -32,9 +32,11 @@ AABB::AABB(Point center, float half_dimension) {
 }
 
 uint32_t AABB::ContainsPoint(Point p) {
-  if (p.x_ < (center_.x_ - half_dimension_) || p.x_ >= (center_.x_ + half_dimension_))
+  if (p.x_ < (center_.x_ - half_dimension_) ||
+      p.x_ >= (center_.x_ + half_dimension_))
     return -1;
-  if (p.y_ < (center_.y_ - half_dimension_) || p.y_ >= (center_.y_ + half_dimension_))
+  if (p.y_ < (center_.y_ - half_dimension_) ||
+      p.y_ >= (center_.y_ + half_dimension_))
     return -1;
   return 1;
 }
@@ -42,8 +44,10 @@ uint32_t AABB::ContainsPoint(Point p) {
 uint32_t AABB::IntersectsAABB(AABB bbox) {
   float ax_1,ay_1,ax_2,ay_2;
   float bx_1,by_1,bx_2,by_2;
-  ax_1 = center_.x_ - half_dimension_; ay_1 = center_.y_ - half_dimension_;
-  ax_2 = center_.x_ + half_dimension_; ay_2 = center_.y_ + half_dimension_;
+  ax_1 = center_.x_ - half_dimension_; ay_1 = center_.y_ -
+    half_dimension_;
+  ax_2 = center_.x_ + half_dimension_; ay_2 = center_.y_ +
+    half_dimension_;
   bx_1 = bbox.center_.x_ - bbox.half_dimension_;
   by_1 = bbox.center_.y_ - bbox.half_dimension_;
   bx_2 = bbox.center_.x_ + bbox.half_dimension_;
@@ -93,16 +97,20 @@ uint32_t QuadTree::Insert(Point point) {
 uint32_t QuadTree::Subdivide() {
   // Generate BBOZ for new qudrants
   AABB nw_bbox(
-    Point(bbox_.center_.x_ - bbox_.half_dimension_/2.0, bbox_.center_.y_ + bbox_.half_dimension_/2.0),
+    Point(bbox_.center_.x_ - bbox_.half_dimension_/2.0,
+      bbox_.center_.y_ + bbox_.half_dimension_/2.0),
     bbox_.half_dimension_/2.0);
   AABB ne_bbox(
-    Point(bbox_.center_.x_ + bbox_.half_dimension_/2.0, bbox_.center_.y_ + bbox_.half_dimension_/2.0),
+    Point(bbox_.center_.x_ + bbox_.half_dimension_/2.0,
+      bbox_.center_.y_ + bbox_.half_dimension_/2.0),
     bbox_.half_dimension_/2.0);
   AABB sw_bbox(
-    Point(bbox_.center_.x_ - bbox_.half_dimension_/2.0, bbox_.center_.y_ - bbox_.half_dimension_/2.0),
+    Point(bbox_.center_.x_ - bbox_.half_dimension_/2.0,
+      bbox_.center_.y_ - bbox_.half_dimension_/2.0),
     bbox_.half_dimension_/2.0);
   AABB se_bbox(
-    Point(bbox_.center_.x_ + bbox_.half_dimension_/2.0, bbox_.center_.y_ - bbox_.half_dimension_/2.0),
+    Point(bbox_.center_.x_ + bbox_.half_dimension_/2.0,
+      bbox_.center_.y_ - bbox_.half_dimension_/2.0),
     bbox_.half_dimension_/2.0);
 
   NW = new QuadTree(nw_bbox, capacity_);

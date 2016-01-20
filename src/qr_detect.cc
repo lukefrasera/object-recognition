@@ -73,7 +73,8 @@ void QRCullContourCriteriaLength(const Contour_t *contours,
   }
 }
 
-uint32_t CountContourChildren(const std::vector<cv::Vec4i> *hierarchy, int idx) {
+uint32_t CountContourChildren(const std::vector<cv::Vec4i> *hierarchy,
+    int idx) {
   if ((*hierarchy)[idx][2] == -1) {
     return 0;
   } else {
@@ -97,7 +98,8 @@ void QRCullContourCriteriaOverlap(const Contour_t *contours,
     const std::vector<cv::Vec4i> hierarchy,
     int32_t *mask) {
   float dist = 2;
-  utils::QuadTree qt(utils::AABB(utils::Point(1280.0/2.0, 720.0/2), 1280.0/2.0), 4);
+  utils::QuadTree qt(
+    utils::AABB(utils::Point(1280.0/2.0, 720.0/2), 1280.0/2.0), 4);
   std::vector<cv::Point2f> moments;
 
   // Compute moments
@@ -147,17 +149,6 @@ void QRDetectIdentifiers(cv::Mat image, Contour_t *ids) {
   std::vector<cv::Vec4i> hierarchy;
 
   QRGetContoursFromImage(image, ids, &hierarchy);
-
-  std::vector<cv::Point2f> moments;
-
   QRCullContours(ids, hierarchy);
-  // Compute moments
-  QRGetContoursMassCenters(ids, &moments);
-
-  for (int i = 0; i < moments.size(); ++i) {
-    cv::circle( image, moments[i], 4, cv::Scalar(50,255,255), -1, 8, 0 );
-  }
-
-  cv::drawContours(image, *ids, -1, cv::Scalar(100,50, 255), 2);
 }
 }

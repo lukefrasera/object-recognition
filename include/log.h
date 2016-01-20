@@ -30,11 +30,16 @@ void log_printf(const char *fmt, ...);
   log_printf("%s:%d:%s(): " fmt "\n",                                          \
                   __FILENAME__, __LINE__, __func__, __VA_ARGS__);              \
 } while (0)
+
+#define LOG_INFO(fmt) do {                                                     \
+  log_printf("%s:%d:%s(): " fmt "\n",                                          \
+                  __FILENAME__, __LINE__, __func__);                           \
+} while (0)
 #else
 #define LOG_INFO(fmt, ...) {}
 #endif
 
-void log_printf(const char *fmt, ...) {
+static inline void log_printf(const char *fmt, ...) {
   va_list arg;
   va_start(arg, fmt);
   vfprintf(stderr, fmt, arg);
