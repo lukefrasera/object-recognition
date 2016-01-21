@@ -1,6 +1,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
 project(object-recognition)
-
+set(BUILD_SHARED_LIBS ON)
 INCLUDE_DIRECTORIES(include)
 option(LOG_INFO_PRINTING "Add logging to builds executable for debugging")
 if( ${LOG_INFO_PRINTING} )
@@ -13,6 +13,10 @@ option(BUILD_TESTS "Add test build functionality")
 
 add_library(quad_tree
   src/quad_tree.cc
+)
+
+add_library(qr_detect
+  src/qr_detect.cc
 )
 
 if( ${BUILD_TESTS} )
@@ -47,3 +51,15 @@ option(BUILD_UTILS "Build utility programs" True)
 if( ${BUILD_UTILS} )
   add_subdirectory(utils/)
 endif( ${BUILD_UTILS} )
+
+set(CMAKE_INSTALL_PREFIX $ENV{HOME}/.local)
+
+# Install the qr library locally
+install(TARGETS qr_detect quad_tree
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION ~/.bin
+  ARCHIVE DESTINATION lib/static
+)
+install(DIRECTORY include/
+  DESTINATION include/qr_detect
+)

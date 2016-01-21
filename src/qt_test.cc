@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <opencv2/opencv.hpp>
 #include <vector>
+
 int main(int argc, char *argv[]) {
   printf("Testing Quad Tree...\n");
   cv::Mat image(100,100, CV_8UC3, cv::Scalar(0,0,0));
