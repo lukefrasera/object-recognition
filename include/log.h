@@ -28,7 +28,7 @@ static inline void log_printf(const char *fmt, ...);
 #ifdef LOG_INFO_PRINTING
 #define LOG_INFO(fmt, ...) do {                                                \
   log_printf("%s:%d:%s(): " fmt "\n",                                          \
-                  __FILENAME__, __LINE__, __func__, __VA_ARGS__);              \
+                  __FILENAME__, __LINE__, __func__, ##__VA_ARGS__);              \
 } while (0)
 
 // #define LOG_INFO(fmt) do {                                                     \

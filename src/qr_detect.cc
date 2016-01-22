@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <map>
 #include "quad_tree.h"
+#include "log.h"
 
 namespace qr {
 struct ContourMoment {
@@ -139,7 +140,7 @@ void QRCullContours(Contour_t *contours, std::vector<cv::Vec4i> hierarchy) {
   for (int i = 0; i < contours->size(); ++i) {mask[i] = 1;}
   // QRCullContourCriteriaLengthRatio(contours, hierarchy, mask);
   QRCullContourCriteriaLength(contours, hierarchy, mask);
-  QRCullContourCriteriaOverlap(contours, hierarchy, mask);
+  // QRCullContourCriteriaOverlap(contours, hierarchy, mask);
   QRCullContourCriteriaInterior(contours, hierarchy, mask);
   QRApplyContourMask(contours, mask);
   delete [] mask;
