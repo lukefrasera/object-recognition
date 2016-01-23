@@ -119,7 +119,7 @@ uint32_t QuadTree::Subdivide() {
   SE = new QuadTree(se_bbox, capacity_);
 
   for (int i = 0; i < points_.size(); ++i) {
-    if (NW->Insert(points_[i]) == 1) {
+    if        (NW->Insert(points_[i]) == 1) {
     } else if (NE->Insert(points_[i]) == 1) {
     } else if (SW->Insert(points_[i]) == 1) {
     } else if (SE->Insert(points_[i]) == 1) {

@@ -3,6 +3,11 @@
 #include <map>
 #include "quad_tree.h"
 #include "log.h"
+#include <opencv2/opencv.hpp>
+#include <opencv2/features2d/features2d.hpp>
+#include <opencv2/flann/miniflann.hpp>
+#include <iostream>
+#include <cmath>
 
 namespace qr {
 struct ContourMoment {
@@ -18,7 +23,6 @@ void QRGetContoursFromImage(cv::Mat image, Contour_t *contours,
   cv::cvtColor(image, gray, CV_RGB2GRAY);
   cv::Canny(gray, edge, 100, 200, 3);
 
-  cv::imshow("edges", edge);
   cv::findContours(edge, *contours, *hierarchy, cv::RETR_TREE,
     cv::CHAIN_APPROX_SIMPLE);
 }
@@ -99,12 +103,46 @@ void QRCullContourCriteriaOverlap(const Contour_t *contours,
     const std::vector<cv::Vec4i> hierarchy,
     int32_t *mask) {
   float dist = 2;
+  cv::Mat features;
   utils::QuadTree qt(
     utils::AABB(utils::Point(1280.0/2.0, 720.0/2), 1280.0/2.0), 4);
   std::vector<cv::Point2f> moments;
-
+  std::vector<cv::Point2f> feature_points;
   // Compute moments
   QRGetContoursMassCenters(contours, &moments);
+
+  for (int i = 0; i < moments.size(); ++i) {
+    if (mask[i] == 1) {
+      if (!(std::isnan(moments[i].x) || std::isnan(moments[i].y))){
+        feature_points.push_back(moments[i]);
+      } else {
+        mask[i] = 0;
+      }
+    }
+  }
+  // features = cv::Mat(feature_points.size(), 2, CV_32F);
+  // float *data = (float*)features.data;
+  // for (int i = 0; i < feature_points.size(); ++i) {
+  //   data[2*i]     = feature_points[i].x;
+  //   data[2*i + 1] = feature_points[i].y;
+  // }
+
+  // std::cout << features << std::endl;
+  // cv::flann::KDTreeIndexParams params;
+  // // Create Momoments matrix as samples
+  // cv::flann::Index knn_object(features, params, cvflann::FLANN_DIST_EUCLIDEAN);
+
+  // std::vector<std::vector<float> > range(5);
+  // std::vector<std::vector<float> > distance(5);
+  // std::vector<float> query(2);
+  // for (int i = 0; i < moments.size(); ++i) {
+  //   if (mask[i] == 1) {
+  //     query[0] = moments[i].x;
+  //     query[1] = moments[i].y;
+  //     knn_object.radiusSearch(query, range, distance, 3.0, 5);
+  //     std::cout << range[0][0] << std::endl;
+  //   }
+  // }
 
   for (int i = 0; i < contours->size(); ++i) {
     if (mask[i] == 1) {
@@ -138,9 +176,9 @@ void QRApplyContourMask(Contour_t *contours, const int32_t *mask) {
 void QRCullContours(Contour_t *contours, std::vector<cv::Vec4i> hierarchy) {
   int32_t *mask = new int32_t[contours->size()];
   for (int i = 0; i < contours->size(); ++i) {mask[i] = 1;}
-  // QRCullContourCriteriaLengthRatio(contours, hierarchy, mask);
+  QRCullContourCriteriaLengthRatio(contours, hierarchy, mask);
   QRCullContourCriteriaLength(contours, hierarchy, mask);
-  // QRCullContourCriteriaOverlap(contours, hierarchy, mask);
+  QRCullContourCriteriaOverlap(contours, hierarchy, mask);
   QRCullContourCriteriaInterior(contours, hierarchy, mask);
   QRApplyContourMask(contours, mask);
   delete [] mask;

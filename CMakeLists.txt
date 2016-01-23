@@ -19,6 +19,11 @@ add_library(qr_detect
   src/qr_detect.cc
 )
 
+target_link_libraries(qr_detect
+  quad_tree
+  ${OpenCV_LIBS}
+)
+
 if( ${BUILD_TESTS} )
   add_executable(qr_test
     src/qr_test.cc
