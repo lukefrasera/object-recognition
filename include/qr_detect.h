@@ -8,6 +8,6 @@ namespace qr {
 // Type Definitions //
 typedef std::vector< std::vector<cv::Point> > Contour_t;
 
-void QRDetectIdentifiers(cv::Mat image, Contour_t *ids);
+std::vector<std::vector<cv::Point2f> > QRDetectIdentifiers(cv::Mat image, Contour_t *ids);
 }
 #endif  // INCLUDE_QR_DETECT_H_

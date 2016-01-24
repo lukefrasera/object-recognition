@@ -6,6 +6,7 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/flann/miniflann.hpp>
+#include <opencv2/flann/flann.hpp>
 #include <iostream>
 #include <cmath>
 
@@ -120,29 +121,6 @@ void QRCullContourCriteriaOverlap(const Contour_t *contours,
       }
     }
   }
-  // features = cv::Mat(feature_points.size(), 2, CV_32F);
-  // float *data = (float*)features.data;
-  // for (int i = 0; i < feature_points.size(); ++i) {
-  //   data[2*i]     = feature_points[i].x;
-  //   data[2*i + 1] = feature_points[i].y;
-  // }
-
-  // std::cout << features << std::endl;
-  // cv::flann::KDTreeIndexParams params;
-  // // Create Momoments matrix as samples
-  // cv::flann::Index knn_object(features, params, cvflann::FLANN_DIST_EUCLIDEAN);
-
-  // std::vector<std::vector<float> > range(5);
-  // std::vector<std::vector<float> > distance(5);
-  // std::vector<float> query(2);
-  // for (int i = 0; i < moments.size(); ++i) {
-  //   if (mask[i] == 1) {
-  //     query[0] = moments[i].x;
-  //     query[1] = moments[i].y;
-  //     knn_object.radiusSearch(query, range, distance, 3.0, 5);
-  //     std::cout << range[0][0] << std::endl;
-  //   }
-  // }
 
   for (int i = 0; i < contours->size(); ++i) {
     if (mask[i] == 1) {
@@ -154,8 +132,9 @@ void QRCullContourCriteriaOverlap(const Contour_t *contours,
   for (int i = 0; i < contours->size(); ++i) {
     if (mask[i] == 1) {
       range = qt.QueryRange(utils::AABB(utils::Point(moments[i]), dist));
-      if (range.size() < 3)
+      if (range.size() < 3) {
         mask[i] = 0;
+      }
     }
   }
 }
@@ -184,10 +163,36 @@ void QRCullContours(Contour_t *contours, std::vector<cv::Vec4i> hierarchy) {
   delete [] mask;
 }
 
-void QRDetectIdentifiers(cv::Mat image, Contour_t *ids) {
+cv::Mat QRGeneratePoints(Contour_t *contours) {
+  std::vector<cv::Point2f> points;
+  QRGetContoursMassCenters(contours, &moments);
+  
+  utils::QuadTree qt;
+  
+  return temp;
+}
+
+std::vector<std::vector<cv::Point2f> > QRDetectIdentifiers(cv::Mat image, Contour_t *ids) {
   std::vector<cv::Vec4i> hierarchy;
 
   QRGetContoursFromImage(image, ids, &hierarchy);
   QRCullContours(ids, hierarchy);
+
+  // average contours into single mass centers
+  cv::Mat feature_points = QRGeneratePoints(ids);
+  
+
+  // Perform KNN to put points into groups of three
+  int knn = 3;
+  cv::Mat_<int> indices(feature_points.rows, knn);
+  cv::Mat_<float> dists(feature_points.rows, knn);
+
+  cv::flann::GenericIndex<cvflann::ChiSquareDistance<float> > index(feature_points,
+    cvflann::KDTreeIndexParams());
+
+  index.knnSearch(feature_points, indices, dists, knn, cvflann::SearchParams(feature_points.cols-1));
+
+  std::cout << dists << std::endl;
+  cv::waitKey(0);
 }
 }
