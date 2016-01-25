@@ -9,12 +9,38 @@
 #include <opencv2/flann/flann.hpp>
 #include <iostream>
 #include <cmath>
+#include <queue>
 
 namespace qr {
 struct ContourMoment {
   std::vector<cv::Point> contour;
   cv::Point2f moment;
 };
+
+struct PointCoord {
+  PointCoord(int v_, cv::Point p_) {
+    value = v_;
+    p = p_;
+  }
+  int value;
+  cv::Point p;
+};
+
+bool operator>(const PointCoord &a, const PointCoord &c) {
+  return a.value > c.value;
+}
+
+bool operator>=(const PointCoord &a, const PointCoord &c) {
+  return a.value >= c.value;
+}
+
+bool operator<(const PointCoord &a, const PointCoord &c) {
+  return a.value < c.value;
+}
+
+bool operator<=(const PointCoord &a, const PointCoord &c) {
+  return a.value <= c.value;
+}
 
 void QRGetContoursFromImage(cv::Mat image, Contour_t *contours,
     std::vector<cv::Vec4i> *hierarchy) {
@@ -165,34 +191,174 @@ void QRCullContours(Contour_t *contours, std::vector<cv::Vec4i> hierarchy) {
 
 cv::Mat QRGeneratePoints(Contour_t *contours) {
   std::vector<cv::Point2f> points;
-  QRGetContoursMassCenters(contours, &moments);
-  
-  utils::QuadTree qt;
-  
-  return temp;
+  QRGetContoursMassCenters(contours, &points);
+  utils::QuadTree qt(
+    utils::AABB(utils::Point(640.0/2.0, 480/2.0), 640.0/2.0), 4);
+
+  for (int i = 0; i < points.size(); ++i) {
+    if (!std::isnan(points[i].x))
+      qt.Insert(utils::Point(points[i]));
+  }
+
+  std::vector<utils::Point> range;
+  std::vector<cv::Point2f> features;
+  for (int i = 0; i < points.size(); ++i) {
+    range = qt.QueryRange(utils::AABB(utils::Point(points[i]), 3.0));
+    // find mean range
+    cv::Point2f avg_point;
+    avg_point.x = 0;
+    avg_point.y = 0;
+    for (int j = 0; j < range.size(); ++j) {
+      avg_point.x += range[j].x_;
+      avg_point.y += range[j].y_;
+    }
+    avg_point.x /= range.size();
+    avg_point.y /= range.size();
+
+    // Check if point is in features yet
+    bool within = false;
+    for (int j = 0; j < features.size(); ++j) {
+      cv::Point2f diff = features[j] - avg_point;
+      float dist = std::sqrt(std::pow(diff.x, 2) + std::pow(diff.y, 2));
+      if (dist < 3)
+        within = true;
+    }
+    if (!within) {
+      features.push_back(avg_point);
+    }
+  }
+  cv::Mat_<float> output(features.size(), 2);
+  float *data = (float*)output.data;
+  for (int i = 0; i < features.size(); ++i) {
+    data[2*i]    = features[i].x;
+    data[2*i +1] = features[i].y;
+  }
+  return output;
+}
+
+cv::Point ComputeIncenter(
+    cv::Point2f A,
+    cv::Point2f B,
+    cv::Point2f C) {
+  float a,b,c;
+  cv::Point2f ab = A - B;
+  cv::Point2f bc = B - C;
+  cv::Point2f ca = C - A;
+  a = std::sqrt(pow(ab.x,2) + pow(ab.y,2));
+  b = std::sqrt(pow(bc.x,2) + pow(bc.y,2));
+  c = std::sqrt(pow(ca.x,2) + pow(ca.y,2));
+
+  cv::Point center;
+  center.x = (A.x + B.x + C.x) / (a + b + c);
+  center.y = (A.y + B.y + C.y) / (a + b + c);
+
+  return center;
+}
+
+std::vector<cv::Point> FindNMaxPoints(cv::Mat field, int num) {
+  std::priority_queue<PointCoord, std::vector<PointCoord>, std::less<std::vector<PointCoord>::value_type> > queue;
+  int *data = (int*)field.data;
+  for (int i = 0; i < field.rows; ++i) {
+    for (int j = 0; j < field.cols; ++j) {
+      queue.push(PointCoord(data[field.cols * i + j], cv::Point(j, i)));
+    }
+  }
+  std::vector<cv::Point> points;
+  for (int i = 0; i < num; ++i) {
+    points.push_back(queue.top().p);
+    queue.pop();
+  }
+  return points;
 }
 
 std::vector<std::vector<cv::Point2f> > QRDetectIdentifiers(cv::Mat image, Contour_t *ids) {
   std::vector<cv::Vec4i> hierarchy;
-
+  std::vector<std::vector<cv::Point2f> > points;
   QRGetContoursFromImage(image, ids, &hierarchy);
   QRCullContours(ids, hierarchy);
 
   // average contours into single mass centers
   cv::Mat feature_points = QRGeneratePoints(ids);
-  
 
-  // Perform KNN to put points into groups of three
-  int knn = 3;
-  cv::Mat_<int> indices(feature_points.rows, knn);
-  cv::Mat_<float> dists(feature_points.rows, knn);
+  if (feature_points.rows > 3) {
+    if (!feature_points.empty()) {
+      // Perform KNN to put points into groups of three
+      int knn = 3;
+      cv::Mat_<int> indices(feature_points.rows, knn);
+      cv::Mat_<float> dists(feature_points.rows, knn);
 
-  cv::flann::GenericIndex<cvflann::ChiSquareDistance<float> > index(feature_points,
-    cvflann::KDTreeIndexParams());
+      cv::flann::GenericIndex<cvflann::ChiSquareDistance<float> > index(feature_points,
+        cvflann::KDTreeIndexParams());
 
-  index.knnSearch(feature_points, indices, dists, knn, cvflann::SearchParams(feature_points.cols-1));
+      index.knnSearch(feature_points, indices, dists, knn, cvflann::SearchParams(feature_points.cols-1));
 
-  std::cout << dists << std::endl;
-  cv::waitKey(0);
+      // group points into 3's
+      uint32_t num_groups = feature_points.rows / 3;
+      LOG_INFO("HELLO");
+      // Vote on Groups based on 3 point triangle incenter
+      std::vector<cv::Point> incenter_vector(feature_points.rows);
+      cv::Mat_<int> voting_field = cv::Mat::zeros(image.rows, image.cols, CV_32S);
+      for (int j = 0; j < feature_points.rows; ++j) {
+        // compute incenter
+        cv::Point2f A,B,C;
+        cv::Point incenter;
+        int a_idx, b_idx, c_idx;
+        a_idx = indices.at<int>(j, 0);
+        b_idx = indices.at<int>(j, 1);
+        c_idx = indices.at<int>(j, 2);
+
+        A.x = feature_points.at<float>(a_idx, 0);
+        A.y = feature_points.at<float>(a_idx, 1);
+
+        B.x = feature_points.at<float>(b_idx, 0);
+        B.y = feature_points.at<float>(b_idx, 1);
+
+        C.x = feature_points.at<float>(c_idx, 0);
+        C.y = feature_points.at<float>(c_idx, 1);
+        incenter = ComputeIncenter(A, B, C);
+        LOG_INFO("Point Centers: %f, %f", incenter.x, incenter.y);
+        voting_field.at<uint32_t>(incenter.y, incenter.x) += 1;
+        incenter_vector.push_back(incenter);
+      }
+      LOG_INFO("HELLO");
+
+      std::vector<cv::Point> group_incenters = FindNMaxPoints(voting_field, num_groups);
+      points = std::vector<std::vector<cv::Point2f> >(group_incenters.size());
+      LOG_INFO("HELLO");
+      for (int i = 0; i < group_incenters.size(); ++i) {
+        for (int j = 0; j < feature_points.rows; ++j) {
+          if (incenter_vector[i] == group_incenters[j]) {
+            int a_idx = indices.at<int>(j,0);
+            int b_idx = indices.at<int>(j,1);
+            int c_idx = indices.at<int>(j,2);
+
+            points[i].push_back(
+                                cv::Point2f(
+                                  feature_points.at<float>(a_idx, 0),
+                                  feature_points.at<float>(a_idx, 1)));
+            points[i].push_back(
+                                cv::Point2f(
+                                  feature_points.at<float>(b_idx, 0),
+                                  feature_points.at<float>(b_idx, 1)));
+            points[i].push_back(
+                                cv::Point2f(
+                                  feature_points.at<float>(c_idx, 0),
+                                  feature_points.at<float>(c_idx, 1)));
+            break;
+          }
+        }
+      }
+    }
+  } else if (feature_points.rows == 3) {
+    if (feature_points.rows > 0) {
+      float *data = (float*)feature_points.data;
+      std::vector<cv::Point2f> point;
+      for (int i = 0; i < feature_points.rows; ++i) {
+        point.push_back(cv::Point2f(data[2*i], data[2*i+1]));
+      }
+      points.push_back(point);
+    }
+  }
+  return points;
 }
 }
