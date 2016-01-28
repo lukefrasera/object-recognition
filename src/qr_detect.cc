@@ -240,18 +240,22 @@ cv::Point ComputeIncenter(
     cv::Point2f A,
     cv::Point2f B,
     cv::Point2f C) {
-  float a,b,c;
-  cv::Point2f ab = A - B;
-  cv::Point2f bc = B - C;
-  cv::Point2f ca = C - A;
-  a = std::sqrt(pow(ab.x,2) + pow(ab.y,2));
-  b = std::sqrt(pow(bc.x,2) + pow(bc.y,2));
-  c = std::sqrt(pow(ca.x,2) + pow(ca.y,2));
+  // float a,b,c;
+  // cv::Point2f ab = A - B;
+  // cv::Point2f bc = B - C;
+  // cv::Point2f ca = C - A;
+  // std::cout << "A:" << A << " - " << "B:" << B << " = " << ab << std::endl;
+  // a = std::sqrt(pow(ab.x,2) + pow(ab.y,2));
+  // b = std::sqrt(pow(bc.x,2) + pow(bc.y,2));
+  // c = std::sqrt(pow(ca.x,2) + pow(ca.y,2));
+
+  // cv::Point center;
+  // center.x = (a * A.x + b * B.x + c * C.x) / (a + b + c);
+  // center.y = (a * A.y + b * B.y + c * C.y) / (a + b + c);
 
   cv::Point center;
-  center.x = (A.x + B.x + C.x) / (a + b + c);
-  center.y = (A.y + B.y + C.y) / (a + b + c);
-
+  center.x = (A.x + B.x + C.x) / 3.0;
+  center.y = (A.y + B.y + C.y) / 3.0;
   return center;
 }
 
@@ -294,7 +298,7 @@ std::vector<std::vector<cv::Point2f> > QRDetectIdentifiers(cv::Mat image, Contou
 
       // group points into 3's
       uint32_t num_groups = feature_points.rows / 3;
-      LOG_INFO("HELLO");
+      LOG_INFO("Begin");
       // Vote on Groups based on 3 point triangle incenter
       std::vector<cv::Point> incenter_vector(feature_points.rows);
       cv::Mat_<int> voting_field = cv::Mat::zeros(image.rows, image.cols, CV_32S);
@@ -306,6 +310,7 @@ std::vector<std::vector<cv::Point2f> > QRDetectIdentifiers(cv::Mat image, Contou
         a_idx = indices.at<int>(j, 0);
         b_idx = indices.at<int>(j, 1);
         c_idx = indices.at<int>(j, 2);
+        LOG_INFO("A IDX: %d, B IDX: %d, C IDX: %d", a_idx, b_idx, c_idx);
 
         A.x = feature_points.at<float>(a_idx, 0);
         A.y = feature_points.at<float>(a_idx, 1);
@@ -315,12 +320,13 @@ std::vector<std::vector<cv::Point2f> > QRDetectIdentifiers(cv::Mat image, Contou
 
         C.x = feature_points.at<float>(c_idx, 0);
         C.y = feature_points.at<float>(c_idx, 1);
+
         incenter = ComputeIncenter(A, B, C);
-        LOG_INFO("Point Centers: %f, %f", incenter.x, incenter.y);
+        LOG_INFO("Point Center: %d, %d", incenter.x, incenter.y);
         voting_field.at<uint32_t>(incenter.y, incenter.x) += 1;
         incenter_vector.push_back(incenter);
       }
-      LOG_INFO("HELLO");
+      LOG_INFO("END");
 
       std::vector<cv::Point> group_incenters = FindNMaxPoints(voting_field, num_groups);
       points = std::vector<std::vector<cv::Point2f> >(group_incenters.size());
