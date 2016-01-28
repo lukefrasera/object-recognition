@@ -8,7 +8,7 @@ if( ${LOG_INFO_PRINTING} )
   add_definitions(-DLOG_INFO_PRINTING=${LOG_INFO_PRINTING})
 endif( ${LOG_INFO_PRINTING} )
 
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 3 REQUIRED)
 option(BUILD_TESTS "Add test build functionality")
 
 add_library(quad_tree
